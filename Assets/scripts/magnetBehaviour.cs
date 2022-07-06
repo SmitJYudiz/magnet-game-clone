@@ -1,42 +1,71 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class magnetBehaviour : MonoBehaviour
 {
-    //smit's work
+    public static magnetBehaviour instance;
+
+    private void Awake()
+    {
+        instance = this;
+    }
+
+ 
 
     public Canvas pickUpDialogCanvas;
 
     public Transform magnetHolder;
 
-    bool magnetWithPlayer;
+    public bool magnetWithPlayer;
 
     Rigidbody2D magnetRB;
-    //public Rigidbody2D rigidBodyToStoreInMagnetRB;
+
+    bool isDrag;
+
+    float controlBtnHoldTimeToRestartlevel;
+
+    public Transform originOfArc;
 
     private void Start()
     {
-        //pickUpDialogCanvas.gameObject.SetActive(true);
+       
         magnetRB = GetComponent<Rigidbody2D>();
-        //rigidBodyToStoreInMagnetRB = GetComponent<Rigidbody2D>();
+       
+        controlBtnHoldTimeToRestartlevel = 1f;
+
+        
     }
 
     private void Update()
     {
-        //magnetRB = rigidBodyToStoreInMagnetRB;
-        //magnetRB = null;
+        //to restart level:
+        if(Input.GetKey(KeyCode.LeftControl))
+        {
+            controlBtnHoldTimeToRestartlevel -= Time.deltaTime;
+            if(controlBtnHoldTimeToRestartlevel<=0)
+            {
+                SceneManager.LoadScene(0);
+                controlBtnHoldTimeToRestartlevel = 1f;
+            }
+        }
+
+      
 
         Vector2 horizontalDistanceBetweenPlayerAndmagnet = new Vector2(References.playerInstance.transform.position.x - transform.position.x, 0);
 
         if (!magnetWithPlayer)
         {
-           
-            //if (Vector2.Distance(References.playerInstance.transform.position, transform.position) <= 3f)
+
             if(Mathf.Abs(horizontalDistanceBetweenPlayerAndmagnet.magnitude)<= 1f)
             {
                 //show the canvas
                 pickUpDialogCanvas.gameObject.SetActive(true);
+                if(Input.GetKeyDown(KeyCode.E))
+                {
+                    GetPickedUpByPlayer();
+                }
             }
             else
             {
@@ -44,58 +73,71 @@ public class magnetBehaviour : MonoBehaviour
                 pickUpDialogCanvas.gameObject.SetActive(false);
             }
         }
-        else
+        else if(magnetWithPlayer)
         {
+          
             //dont show it
             pickUpDialogCanvas.gameObject.SetActive(false);
-        }
-        //check if player is anywhere nearby the magnet
-       
 
-
-        //here if E is pressed the magnet's parent should be the magnet holder which inside the player
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            if(magnetWithPlayer)
+            if (Input.GetKey(KeyCode.E))
             {
-                //throw the magnet
+                isDrag = true;
+                OnMouseDrag();
+            }
+            else
+            {
+                isDrag = false;
+               
+                //ThrowMagnet(directionToThrowIn);
+            }
+
+            if(Input.GetMouseButtonDown(0))
+            {
+                isDrag = false;
+
                 ThrowMagnet();
             }
-            else if(horizontalDistanceBetweenPlayerAndmagnet.magnitude <= 1.5f)
-            {
-                //pick up the magnet
-                //call the method to pickup the magnet
-                GetPickedUpByPlayer();
-            }
-              
-        }
 
-        
-        
+            if(Input.GetKeyDown(KeyCode.F))
+            {
+                
+                //ThrowMagnet();
+            }
+        }
+    }
+
+
+  
+
+    private void OnMouseDrag()
+    {
+        //if(isDrag)
+        //{
+        //    //Debug.Log("mouse dragged");
+        //}
+
     }
 
     public void GetPickedUpByPlayer()
     {
-        //magnetRB = null;
+        
         magnetRB.isKinematic = true;
         magnetRB.simulated = false;
         transform.SetParent(magnetHolder);
         transform.position = magnetHolder.position;
-        //transform.localPosition = new Vector3(0,2.33f,0.074f);
+    
         magnetWithPlayer = true;
         pickUpDialogCanvas.gameObject.SetActive(false);
     }
 
     public void ThrowMagnet()
     {
-        // magnetRB = rigidBodyToStoreInMagnetRB;
-        magnetRB.isKinematic = false;
-        magnetRB.simulated = true;
-        magnetRB.AddForce(transform.right * 3, ForceMode2D.Impulse);
-        //magnetRB.detectCollision = true;
-        //magnetRB.collisionDetectionMode = CollisionDetectionMode2D;
-        //transform.localPosition = new Vector3(References.playerInstance.transform.position.x + new Vector3(0, 2.33f, 0.074f).x,0 );
-        transform.parent = null;
-        magnetWithPlayer = false;
+       
+            magnetRB.isKinematic = false;
+            magnetRB.simulated = true;
+          
+            transform.parent = null;
+            magnetWithPlayer = false;
+            magnetRB.velocity = BowBehaviour.instance.shotPoint.transform.right * BowBehaviour.instance.launchForce;
     }
 }
